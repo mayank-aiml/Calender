@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Holiday Calendar</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500&display=swap');
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      color: black;
+    }
+    h1 {
+      background: #4caf50;
+      color: white;
+      padding: 1em 0;
+      margin: 0;
+      border-radius: 0 0 20px 20px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.5em;
+      letter-spacing: 2px;
+    }
+    .calendar-controls {
+      margin-top: 1em;
+    }
+    .calendar-controls select, .calendar-controls button {
+      padding: 0.5em;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      font-family: 'Quicksand', sans-serif;
+      margin: 0.2em;
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      max-width: 800px;
+      margin: 2em auto;
+      background-color: white;
+      padding: 1em;
+      border-radius: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .day {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 1em;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      position: relative;
+      border-radius: 20px;
+      transition: 0.3s;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: black;
+    }
+    .day:hover {
+      background-color: #e8f5e9;
+    }
+    .note {
+      font-size: 0.9em;
+      color: #333;
+      margin-top: 5px;
+      font-weight: normal;
+    }
+    .crossed {
+      text-decoration: line-through;
+      background-color: #bbb !important;
+    }
+    .color-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+    #noteModal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1em;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 10;
+      border-radius: 20px;
+      font-family: 'Quicksand', sans-serif;
+      color: black;
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.3);
+      display: none;
+      z-index: 5;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1em;
+      border-radius: 10px;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+      margin: 0.2em;
+      font-family: 'Quicksand', sans-serif;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    label, textarea, select {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Holiday Calendar</h1>
+  <div class="calendar-controls">
+    <select id="monthSelect"></select>
+    <select id="yearSelect"></select>
+    <button onclick="undoAllNotes()">Undo All</button>
+  </div>
+  <div class="calendar" id="calendar"></div>
+  <div id="overlay"></div>
+  <div id="noteModal">
+    <h3>Add Note for <span id="modalDate"></span></h3>
+    <textarea id="noteText" rows="4" cols="30"></textarea><br /><br />
+    <label for="basicColorSelect">Pick a color: </label>
+    <select id="basicColorSelect">
+      <option value="#ff0000">Red</option>
+      <option value="#0000ff">Blue</option>
+      <option value="#008000">Green</option>
+      <option value="#000000">Black</option>
+    </select><br /><br />
+    <button onclick="saveNote()">Save</button>
+    <button onclick="undoNote(selectedDate)">Undo</button>
+    <button onclick="closeModal()">Cancel</button>
+  </div>
+  <script>
+    const calendarEl = document.getElementById('calendar');
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const noteModal = document.getElementById('noteModal');
+    const overlay = document.getElementById('overlay');
+    const modalDate = document.getElementById('modalDate');
+    const noteText = document.getElementById('noteText');
+    const basicColorSelect = document.getElementById('basicColorSelect');
+    let selectedDate = null;
+
+    function openModal(day, month, year) {
+      selectedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      modalDate.innerText = selectedDate;
+      noteText.value = localStorage.getItem(selectedDate + '_note') || '';
+      basicColorSelect.value = localStorage.getItem(selectedDate + '_color') || '#000000';
+      noteModal.style.display = 'block';
+      overlay.style.display = 'block';
+    }
+
+    function closeModal() {
+      noteModal.style.display = 'none';
+      overlay.style.display = 'none';
+    }
+
+    function saveNote() {
+      const note = noteText.value;
+      const color = basicColorSelect.value;
+      localStorage.setItem(selectedDate + '_note', note);
+      localStorage.setItem(selectedDate + '_color', color);
+      renderCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+      closeModal();
+    }
+
+    function undoNote(date) {
+      localStorage.removeItem(date + '_note');
+      localStorage.removeItem(date + '_color');
+      renderCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+      closeModal();
+    }
+
+    function undoAllNotes() {
+      for (let key in localStorage) {
+        if (key.includes('_note') || key.includes('_color')) {
+          localStorage.removeItem(key);
+        }
+      }
+      renderCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+    }
+
+    function renderCalendar(month, year) {
+      calendarEl.innerHTML = '';
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const firstDay = new Date(year, month, 1).getDay();
+
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'day';
+        emptyCell.style.visibility = 'hidden';
+        calendarEl.appendChild(emptyCell);
+      }
+
+      const today = new Date();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayEl = document.createElement('div');
+        dayEl.className = 'day';
+        dayEl.innerText = day;
+        dayEl.onclick = () => openModal(day, month, year);
+
+        const note = localStorage.getItem(fullDate + '_note');
+        const color = localStorage.getItem(fullDate + '_color');
+
+        if (color) {
+          dayEl.style.backgroundColor = color;
+        }
+
+        if (note) {
+          const noteSpan = document.createElement('div');
+          noteSpan.className = 'note';
+          noteSpan.innerHTML = `<span class="color-indicator" style="background:${color}"></span>${note}`;
+          dayEl.appendChild(noteSpan);
+        }
+
+        const cellDate = new Date(year, month, day);
+        if (cellDate < today.setHours(0,0,0,0)) {
+          dayEl.classList.add('crossed');
+        }
+
+        calendarEl.appendChild(dayEl);
+      }
+    }
+
+    function populateSelectors() {
+      for (let m = 0; m < 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.text = new Date(0, m).toLocaleString('default', { month: 'long' });
+        monthSelect.appendChild(opt);
+      }
+
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.text = y;
+        yearSelect.appendChild(opt);
+      }
+
+      monthSelect.value = new Date().getMonth();
+      yearSelect.value = new Date().getFullYear();
+      renderCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+    }
+
+    monthSelect.addEventListener('change', () => {
+      renderCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+    });
+
+    yearSelect.addEventListener('change', () => {
+      renderCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+    });
+
+    populateSelectors();
+  </script>
+</body>
+</html>
