@@ -197,6 +197,29 @@
     }
 
     function renderCalendar(month, year) {
+  const hinduHolidays = {
+    '2025-08-09': 'Raksha Bandhan',
+    '2025-08-16': 'Janmashtami',
+    '2025-08-27': 'Ganesh Chaturthi',
+    '2025-10-02': 'Gandhi Jayanti / Dussehra',
+    '2025-10-24': 'Diwali',
+    '2026-02-15': 'Maha Shivratri',
+    '2026-03-04': 'Holi',
+    '2026-03-08': 'Rang Panchami',
+    '2026-03-19': 'Ugadi / Gudi Padwa',
+    '2026-03-21': 'Eid ul-Fitr',
+    '2026-03-26': 'Rama Navami'
+  };
+  const academicEvents = {
+    '2025-08-18': 'Mid-Term Exams Start',
+    '2025-08-28': 'Mid-Term Exams End',
+    '2025-10-01': 'Term End Exams Start',
+    '2025-10-18': 'Term End Exams End',
+    '2026-02-02': 'Mid-Term Exams Start',
+    '2026-02-11': 'Mid-Term Exams End',
+    '2026-03-30': 'Final Exams Start',
+    '2026-04-17': 'Final Exams End'
+  };
       calendarEl.innerHTML = '';
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const firstDay = new Date(year, month, 1).getDay();
@@ -231,6 +254,24 @@
         }
 
         const cellDate = new Date(year, month, day);
+        const weekDay = cellDate.getDay();
+        if (weekDay === 0) dayEl.style.color = 'red';
+
+        const dateKey = fullDate;
+        if (hinduHolidays[dateKey]) {
+          dayEl.style.backgroundColor = '#ffcccc';
+          const noteSpan = document.createElement('div');
+          noteSpan.className = 'note';
+          noteSpan.innerText = hinduHolidays[dateKey];
+          dayEl.appendChild(noteSpan);
+        }
+        if (academicEvents[dateKey]) {
+          dayEl.style.backgroundColor = '#ffd480';
+          const noteSpan = document.createElement('div');
+          noteSpan.className = 'note';
+          noteSpan.innerText = academicEvents[dateKey];
+          dayEl.appendChild(noteSpan);
+        }
         if (cellDate < today.setHours(0,0,0,0)) {
           dayEl.classList.add('crossed');
         }
